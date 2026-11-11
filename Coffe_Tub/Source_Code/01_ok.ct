@@ -1,0 +1,14 @@
+// declarações, atribuições e expressões
+int a, b = 2;
+float x;
+char c = 'z';
+
+/* precedência e associatividade */
+a = 3 + 4 * 2;
+x = (a + b) / 2.5 - -1;
+a = 10 - 4 - 3;      /* (10-4)-3 */
+c = 'k';
+{
+    int y;
+    y = a - b - 1;
+}

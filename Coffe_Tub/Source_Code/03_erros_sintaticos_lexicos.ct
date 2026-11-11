@@ -1,0 +1,6 @@
+int a
+a = 3;            // faltou ; na linha anterior
+float x;
+x = 2 + ;         // expressão incompleta
+a = 4 @ 2;        // caractere inválido
+x = (1 + 2;       // parêntese aberto

@@ -1,0 +1,21 @@
+int a = 5, b = 3, max;
+float x = 2.5;
+char c = 'a';
+
+if (a > b) max = a; else max = b;
+
+if (a >= b) {
+    a = a - b;
+} else {
+    b = b - a;
+}
+
+// aninhado + tipos mistos (int com float, char com int)
+if (x <= a) {
+    if (c == 97) a = 1; else a = 2;
+} else {
+    if (a != b + 1) b = 0; else b = 1;
+}
+
+if (x < 3.0) x = x * 2; else x = x / 2;
+if (a == b) a = 0; else { b = 0; }

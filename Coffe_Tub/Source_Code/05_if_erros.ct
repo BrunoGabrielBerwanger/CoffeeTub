@@ -1,0 +1,7 @@
+int a = 1, b = 2;
+if (a > b) a = 0;      // if sem else
+b = 5;
+if (a = 3) b = 1; else b = 2;      // '=' no lugar de '=='
+if (a) b = 1; else b = 2;          // condição sem operador relacional
+if (a < z) b = 1; else b = 2;      // z não declarada
+if (a > b) a = 0; else a = 1.5;    // atribuição float -> int

@@ -1,0 +1,7 @@
+int a;
+int a;            // redeclaração
+float f = 1.5;
+a = f;            // float -> int não permitido
+b = 3;            // b não declarada
+char c;
+c = 1 + 2;        // int -> char não permitido
