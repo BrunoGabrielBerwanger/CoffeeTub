@@ -49,8 +49,9 @@ extern int yydebug;
 
     typedef enum { T_CHAR, T_INT, T_FLOAT, T_ERR } Type;   /* ordem = "largura" */
     typedef struct { Type type; char *place; } Expr;       /* atributos sintetizados */
+    typedef struct { long val; char *text; } CaseVal;      /* constante de um case */
 
-#line 54 "parser.tab.h"
+#line 55 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -87,14 +88,15 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 147 "parser.y"
+#line 230 "parser.y"
 
     char *str;
     int   ival;
     Type  type;
+    CaseVal cv;
     Expr  ex;
 
-#line 98 "parser.tab.h"
+#line 100 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

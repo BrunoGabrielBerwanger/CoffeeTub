@@ -1,0 +1,35 @@
+int op = 2, r = 0, i = 0;
+char c = 'b';
+
+// casos unitários, casos empilhados, negativo, default
+switch (op) {
+    case 1:
+        r = 10;
+        break;
+    case 2:
+    case 3:
+        r = 20;
+        break;
+    case -1:
+        r = -1;
+        break;
+    default:
+        r = 0;
+}
+
+// fall-through (sem break), char, sem default
+switch (c) {
+    case 'a': r = 1;
+    case 'b': r = r + 2;
+              break;
+    case 'c': r = 99; break;
+}
+
+// switch dentro de while; break sai só do switch; outro break sai do while
+while (i < 5) {
+    switch (i) {
+        case 3: break;
+        default: r = r + i;
+    }
+    if (r > 20) { break; } else { i = i + 1; }
+}

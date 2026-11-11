@@ -1,0 +1,22 @@
+int i = 0, soma = 0, n = 10;
+float media;
+
+while (i < n) {
+    soma = soma + i;
+    i = i + 1;
+}
+
+// while aninhado com if/else dentro
+int j;
+i = 0;
+while (i != 3) {
+    j = 0;
+    while (j < i) {
+        if (j == 1) soma = soma + 1; else soma = soma - 1;
+        j = j + 1;
+    }
+    i = i + 1;
+}
+
+media = soma / 2.0;
+while (media >= 0.5) media = media - 1;

@@ -1,0 +1,15 @@
+int a = 1;
+float f = 1.5;
+char c = 'a';
+break;                       // break fora de while/switch
+switch (f) { case 1: a = 2; }          // switch sobre float
+switch (a) {
+    case 1: a = 2; break;
+    case 1: a = 3; break;              // case duplicado
+    case 'a': a = 4; break;
+    case 97: a = 5; break;             // duplicado de 'a' (mesmo valor)
+    default: a = 0;
+    default: a = 1;                    // dois defaults
+}
+switch (a) { case c: a = 1; }          // case exige constante
+switch (a) { a = 1; }                  // comando fora de case

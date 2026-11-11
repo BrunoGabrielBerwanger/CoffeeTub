@@ -1,0 +1,6 @@
+int i = 0;
+while (i) i = i + 1;            // condição sem operador relacional
+while (i < 10 i = i + 1;        // falta ')'
+while (k < 10) i = i + 1;       // k não declarada
+while (i < 10) i = i + 1.5;     // float -> int
+while (i < 10)                   // falta o comando do corpo
