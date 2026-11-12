@@ -1,14 +1,11 @@
 %{
-/* Coffee Tub - analisador léxico (etapa 1)
- * O lexer já reconhece TODOS os tokens da linguagem; o parser é que
- * vai passando a aceitar as construções etapa por etapa. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "parser.tab.h"
 
-void lex_error(const char *fmt, ...);
-static int comment_line;
+void LexError(const char *fmt, ...);
+static int CommentLine;
 %}
 
 %option noyywrap noinput nounput yylineno nodefault
@@ -19,12 +16,12 @@ LETTER  [a-zA-Z_]
 
 %%
 
-"//".*                      { /* comentário de linha */ }
-"/*"                        { comment_line = yylineno; BEGIN(COMMENT); }
+"//".*                      { /* line of comment */ }
+"/*"                        { CommentLine = yylineno; BEGIN(COMMENT); }
 <COMMENT>"*/"               { BEGIN(INITIAL); }
 <COMMENT>\n                 { }
 <COMMENT>.                  { }
-<COMMENT><<EOF>>            { lex_error("comentário iniciado na linha %d não foi fechado", comment_line);
+<COMMENT><<EOF>>            { LexError("comment on line %d was not closed", CommentLine);
                               BEGIN(INITIAL); yyterminate(); }
 
 "int"                       { return KW_INT; }
@@ -50,8 +47,8 @@ LETTER  [a-zA-Z_]
 
 [{}();,:+\-*/=<>]           { return yytext[0]; }
 
-[ \t\r\n]+                  { /* espaço em branco */ }
+[ \t\r\n]+                  { /* blank space */ }
 
-.                           { lex_error("caractere inválido '%s'", yytext); }
+.                           { LexError("invalid character '%s'", yytext); }
 
 %%

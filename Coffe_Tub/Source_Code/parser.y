@@ -5,12 +5,6 @@
 }
 
 %code {
-/* Coffee Tub - analisador sintático + semântico + tradução dirigida por sintaxe
- * Etapa 1: declarações, atribuições e expressões aritméticas.
- * Etapa 2: if/else (else obrigatório) e condições com os 6 operadores relacionais.
- * Etapa 3a: while.
- * Etapa 3b: switch/case/default e break (válido em while e switch).
- * Saída da tradução: código de três endereços (TAC). */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,9 +13,9 @@
 extern int yylineno;
 int  yylex(void);
 void yyerror(const char *msg);
-void lex_error(const char *fmt, ...);
+void LexError(const char *fmt, ...);
 
-/* ---------- tabela de símbolos ---------- */
+/* symbol table */
 #define MAXSYM 512
 typedef struct { char *name; Type type; } Sym;
 static Sym symtab[MAXSYM];
@@ -31,12 +25,13 @@ static const char *tname(Type t) {
     switch (t) { case T_CHAR: return "char"; case T_INT: return "int";
                  case T_FLOAT: return "float"; default: return "?"; }
 }
+
 static int lookup(const char *name) {
     for (int i = 0; i < nsym; i++) if (!strcmp(symtab[i].name, name)) return i;
     return -1;
 }
 
-/* ---------- erros ---------- */
+/* errors */
 static int nerrors = 0;
 static void semerr(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -44,18 +39,20 @@ static void semerr(const char *fmt, ...) {
     vfprintf(stderr, fmt, ap); fputc('\n', stderr);
     va_end(ap); nerrors++;
 }
-void lex_error(const char *fmt, ...) {
+
+void LexError(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
     fprintf(stderr, "Linha %d: erro léxico: ", yylineno);
     vfprintf(stderr, fmt, ap); fputc('\n', stderr);
     va_end(ap); nerrors++;
 }
+
 void yyerror(const char *msg) {
     fprintf(stderr, "Linha %d: erro sintático: %s\n", yylineno, msg);
     nerrors++;
 }
 
-/* ---------- geração de código (buffer; só é impresso se não houver erros) ---------- */
+/* code gen (only prints, if no error) */
 static char outbuf[1 << 20];
 static size_t outlen = 0;
 static void emit(const char *fmt, ...) {
@@ -65,12 +62,13 @@ static void emit(const char *fmt, ...) {
     if (outlen < sizeof(outbuf) - 1) outbuf[outlen++] = '\n';
     outbuf[outlen] = 0;
 }
+
 static int ntemp = 0;
 static char *newtemp(void) {
     char buf[32]; snprintf(buf, sizeof buf, "t%d", ++ntemp); return strdup(buf);
 }
 
-/* ---------- ações semânticas ---------- */
+/* semantic */
 static Type cur_type;   /* tipo da declaração em andamento */
 
 static void declare(const char *name, Type t) {
@@ -96,7 +94,7 @@ static void assign_to(const char *name, Expr e) {
 
 static Expr err_expr(void) { Expr r = { T_ERR, "?" }; return r; }
 
-/* Promoção de tipos: char -> int -> float. Emite as conversões necessárias. */
+/* Type promotion: char -> int -> float. */
 static void unify(Expr *a, Expr *b, Type *rt) {
     Type ta = a->type == T_CHAR ? T_INT : a->type;
     Type tb = b->type == T_CHAR ? T_INT : b->type;
@@ -116,7 +114,7 @@ static Expr binop(const char *op, Expr a, Expr b) {
     return e;
 }
 
-/* Condição: o resultado é um valor lógico (0/1), representado como int. */
+/* Conditional: result is a logic value, represented as a int value */
 static Expr relop(const char *op, Expr a, Expr b) {
     if (a.type == T_ERR || b.type == T_ERR) return err_expr();
     Type rt; unify(&a, &b, &rt);
@@ -129,7 +127,7 @@ static Expr relop(const char *op, Expr a, Expr b) {
 static int nlabel = 0;
 static int newlabel(void) { return ++nlabel; }
 
-/* ---------- break: pilha de rótulos de saída (while e switch aninhados) ---------- */
+/* break */
 typedef struct BrkNode { int label; struct BrkNode *prev; } BrkNode;
 static BrkNode *brk_top = NULL;
 static void push_break(int label) {
@@ -141,9 +139,7 @@ static void do_break(void) {
     emit("goto L%d", brk_top->label);
 }
 
-/* ---------- switch ----------
- * Estratégia (fall-through como no C): os corpos dos cases são emitidos em sequência,
- * cada um com seu rótulo; os testes ficam no fim, num bloco de despacho (Ltest). */
+/* switch case (with fall-through) */
 typedef struct SwCtx {
     int l_test, l_end, l_default;
     char *tmp;
@@ -195,7 +191,7 @@ static void add_default(void) {
 
 static void switch_end(void) {
     SwCtx *c = sw_top;
-    emit("goto L%d", c->l_end);                   /* o último case "cai" para fora, sem passar pelos testes */
+    emit("goto L%d", c->l_end);
     emit("L%d:", c->l_test);
     for (int i = 0; i < c->n; i++) {
         char *t = newtemp();
@@ -237,8 +233,8 @@ static Expr var_ref(const char *name) {
 
 %token <str> ID INT_LIT FLOAT_LIT CHAR_LIT
 %token KW_INT KW_FLOAT KW_CHAR
-%token IF ELSE SWITCH CASE DEFAULT BREAK WHILE     /* usados nas próximas etapas */
-%token EQ NE GE LE                                  /* == != >= <= */
+%token IF ELSE SWITCH CASE DEFAULT BREAK WHILE
+%token EQ NE GE LE
 
 %type <type> type
 %type <ex>   expr term factor cond
@@ -262,7 +258,7 @@ stmt      : decl
           | error ';'                { yyerrok; }       /* recuperação: pula até o ';' */
           ;
 
-/* ---- declarações: int a, b = 2; ---- */
+/* declarations */
 decl      : type { cur_type = $1; } id_list ';' ;
 
 type      : KW_INT   { $$ = T_INT; }
@@ -277,11 +273,10 @@ id_item   : ID            { declare($1, cur_type); }
           | ID '=' expr   { declare($1, cur_type); assign_to($1, $3); }
           ;
 
-/* ---- atribuição ---- */
+/* assignment */
 assign    : ID '=' expr ';'  { assign_to($1, $3); } ;
 
-/* ---- if/else: o else é OBRIGATÓRIO (não existe regra de if sem else) ----
- * Como todo if tem else, a gramática não tem o problema do "else pendente". */
+/* if statement (else is mandatory) */
 if_stmt   : IF '(' cond ')'
               { int l_else = newlabel();
                 emit("ifFalse %s goto L%d", $3.place, l_else);
@@ -295,7 +290,7 @@ if_stmt   : IF '(' cond ')'
               { emit("L%d:", $<ival>7); }
           ;
 
-/* ---- while: o rótulo de início vem ANTES da condição (ela é reavaliada a cada volta) ---- */
+/* while loop */
 while_stmt : WHILE
                { int l_begin = newlabel();
                  emit("L%d:", l_begin);
@@ -311,7 +306,7 @@ while_stmt : WHILE
                  pop_break(); }
            ;
 
-/* ---- switch: casos unitários ou empilhados (case 1: case 2: ...), default opcional ---- */
+/* switch case */
 switch_stmt : SWITCH '(' expr ')'  { switch_begin($3); }
               '{' case_list '}'    { switch_end(); }
             ;
@@ -330,7 +325,6 @@ case_const : INT_LIT      { $$.val = atol($1);       $$.text = $1; }
            | CHAR_LIT     { $$.val = char_value($1); $$.text = $1; }
            ;
 
-/* ---- condição: expr op_relacional expr ---- */
 cond      : expr relop expr  { $$ = relop($2, $1, $3); } ;
 
 relop     : EQ  { $$ = "=="; }
@@ -341,7 +335,7 @@ relop     : EQ  { $$ = "=="; }
           | LE  { $$ = "<="; }
           ;
 
-/* ---- expressões: precedência/associatividade pela própria estrutura ---- */
+/* precedence/associativity */
 expr      : expr '+' term    { $$ = binop("+", $1, $3); }
           | expr '-' term    { $$ = binop("-", $1, $3); }
           | term             { $$ = $1; }
@@ -366,11 +360,11 @@ int main(int argc, char **argv) {
     if (argc > 1 && !freopen(argv[1], "r", stdin)) { perror(argv[1]); return 2; }
     yyparse();
     if (nerrors) {
-        fprintf(stderr, "\nCompilação falhou: %d erro(s).\n", nerrors);
+        fprintf(stderr, "\nCompilation failed: %d error(s).\n", nerrors);
         return 1;
     }
-    printf("=== Código de três endereços ===\n%s", outbuf);
-    printf("\n=== Tabela de símbolos ===\n");
+    printf("### Code ###\n%s", outbuf);
+    printf("\n### Symbol table ###\n");
     for (int i = 0; i < nsym; i++) printf("%-4s %s\n", tname(symtab[i].type), symtab[i].name);
     return 0;
 }
