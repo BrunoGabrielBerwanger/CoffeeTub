@@ -35,20 +35,20 @@ static int lookup(const char *name) {
 static int nerrors = 0;
 static void semerr(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
-    fprintf(stderr, "Linha %d: erro semântico: ", yylineno);
+    fprintf(stderr, "On line %d: semantic error: ", yylineno);
     vfprintf(stderr, fmt, ap); fputc('\n', stderr);
     va_end(ap); nerrors++;
 }
 
 void LexError(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
-    fprintf(stderr, "Linha %d: erro léxico: ", yylineno);
+    fprintf(stderr, "On line %d: lexical error: ", yylineno);
     vfprintf(stderr, fmt, ap); fputc('\n', stderr);
     va_end(ap); nerrors++;
 }
 
 void yyerror(const char *msg) {
-    fprintf(stderr, "Linha %d: erro sintático: %s\n", yylineno, msg);
+    fprintf(stderr, "On line %d: syntactic error: %s\n", yylineno, msg);
     nerrors++;
 }
 
@@ -72,19 +72,19 @@ static char *newtemp(void) {
 static Type cur_type;   /* tipo da declaração em andamento */
 
 static void declare(const char *name, Type t) {
-    if (lookup(name) >= 0) { semerr("variável '%s' já foi declarada", name); return; }
-    if (nsym >= MAXSYM)    { semerr("tabela de símbolos cheia"); return; }
+    if (lookup(name) >= 0) { semerr("variable '%s' haas already been declared", name); return; }
+    if (nsym >= MAXSYM)    { semerr("symbol table is full"); return; }
     symtab[nsym].name = strdup(name); symtab[nsym].type = t; nsym++;
     emit("decl %s %s", tname(t), name);
 }
 
 static void assign_to(const char *name, Expr e) {
     int i = lookup(name);
-    if (i < 0) { semerr("variável '%s' não foi declarada", name); return; }
+    if (i < 0) { semerr("variable '%s' was not declared", name); return; }
     if (e.type == T_ERR) return;
     Type t = symtab[i].type;
     if (e.type > t) {           /* só aceita conversão "para cima": char -> int -> float */
-        semerr("atribuição incompatível: '%s' é %s, mas a expressão é %s",
+        semerr("incompatible assignment: '%s' is %s, but the expression is %s",
                name, tname(t), tname(e.type));
         return;
     }
@@ -135,7 +135,7 @@ static void push_break(int label) {
 }
 static void pop_break(void) { BrkNode *n = brk_top; brk_top = n->prev; free(n); }
 static void do_break(void) {
-    if (!brk_top) { semerr("'break' só pode ser usado dentro de while ou switch"); return; }
+    if (!brk_top) { semerr("'break' can olny be used inside while or switch operations"); return; }
     emit("goto L%d", brk_top->label);
 }
 
@@ -160,7 +160,7 @@ static long char_value(const char *t) {          /* t = 'a' ou '\n' etc. */
 static void switch_begin(Expr e) {
     SwCtx *c = calloc(1, sizeof *c);
     c->l_test = newlabel(); c->l_end = newlabel(); c->l_default = -1;
-    if (e.type == T_FLOAT) semerr("a expressão do switch deve ser int ou char, não float");
+    if (e.type == T_FLOAT) semerr("variable on case of switch must be int or char, not float");
     c->tmp = newtemp();
     if (e.type != T_ERR) emit("%s = %s", c->tmp, e.place);
     emit("goto L%d", c->l_test);
@@ -172,7 +172,7 @@ static void add_case(CaseVal v) {
     SwCtx *c = sw_top;
     int l = newlabel(); emit("L%d:", l);
     for (int i = 0; i < c->n; i++)
-        if (c->vals[i] == v.val) { semerr("valor de 'case' duplicado: %s", v.text); return; }
+        if (c->vals[i] == v.val) { semerr("value on 'case' is duplicated: %s", v.text); return; }
     if (c->n == c->cap) {
         c->cap = c->cap ? 2 * c->cap : 8;
         c->vals   = realloc(c->vals,   c->cap * sizeof *c->vals);
@@ -185,7 +185,7 @@ static void add_case(CaseVal v) {
 static void add_default(void) {
     SwCtx *c = sw_top;
     int l = newlabel(); emit("L%d:", l);
-    if (c->l_default >= 0) semerr("mais de um 'default' no mesmo switch");
+    if (c->l_default >= 0) semerr("more than a single 'default' on switch");
     else c->l_default = l;
 }
 
@@ -215,7 +215,7 @@ static Expr neg(Expr a) {
 
 static Expr var_ref(const char *name) {
     int i = lookup(name);
-    if (i < 0) { semerr("variável '%s' não foi declarada", name); return err_expr(); }
+    if (i < 0) { semerr("variable '%s' was not declared", name); return err_expr(); }
     Expr e = { symtab[i].type, strdup(name) };
     return e;
 }
@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !freopen(argv[1], "r", stdin)) { perror(argv[1]); return 2; }
     yyparse();
     if (nerrors) {
-        fprintf(stderr, "\nCompilation failed: %d error(s).\n", nerrors);
+        fprintf(stderr, "\nCompilation failed: %d error(s). Go get a coffee now.\n", nerrors);
         return 1;
     }
     printf("### Code ###\n%s", outbuf);
